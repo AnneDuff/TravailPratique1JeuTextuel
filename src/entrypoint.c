@@ -49,43 +49,46 @@ const char* states[] = {
     "FL",
     "HA"
 };
-void add_random_fruit(sqlite3* db){
-    if (sqlite3_exec(db, "BEGIN;", NULL, NULL, NULL) != SQLITE_OK) {
-        LOG_SQLITE3_ERROR(db);
-        return;
-    }
+
+const char* nomsLieux[] = {
+    "Haunted Mines",
+    "Dark Forest",
+    "Troll Village"
+};
+const char* descriptionsLieux[] = {
+    "Abandonned dwarvish mines, believed to be haunted by their ghosts.",
+    "->INSERT FOREST DESCRIPTION HERE",
+    "->INSERT VILLAGE DESCRIPTION HERE"
+};
+
+void seeDescriLieux(sqlite3 *db, char *name, int numLieu){
     sqlite3_stmt* stmt = NULL;
     char content[] =
-    "INSERT INTO FruitsForSale(fruit,etat,price)\n"
-    "VALUES\n"
-    "(?,?,?);";
+    "SELECT descri\n"
+    "FROM lieux\n"
+    "WHERE access = 1;";
     int ret = sqlite3_prepare_v2(db,content,-1,&stmt,NULL);
-    int fruit = rand() %5;
-    int state = rand() %5;
-    double price = ((rand()+1) % 100) /100 + rand() % 2;
-    if(sqlite3_bind_text(stmt,1,fruits[fruit],-1,SQLITE_STATIC) != SQLITE_OK){
+
+    if(ret != SQLITE_OK){
         LOG_SQLITE3_ERROR(db);
     }
-    if(sqlite3_bind_text(stmt,2,states[state],-1,SQLITE_STATIC) != SQLITE_OK){
-        LOG_SQLITE3_ERROR(db);
-    }
-    if(sqlite3_bind_double(stmt,3,price) != SQLITE_OK){
-        LOG_SQLITE3_ERROR(db);
-    }
-    ret = sqlite3_step(stmt);
-    if (sqlite3_exec(db, "COMMIT;", NULL, NULL, NULL) != SQLITE_OK) {
-        LOG_SQLITE3_ERROR(db);
-    }
+    
+    int column = 0;
+    const unsigned char* n = sqlite3_column_text(stmt,column++);
+    
+    knob_log(KNOB_INFO,"[DESCRIPTION] %s", n);
+    
+    sqlite3_finalize(stmt);
 }
 
 void raylib_start(void){
     srand(time(NULL));
     sqlite3* db = NULL;
-    sqlite3_open("./fruits.db",&db);
-    see_state_fruits(db,"FL");
-    see_state_fruits(db,"CA");
-    see_state_fruits(db,"NC");
-    // add_random_fruit(db); //Uncomment to add a random fruit...
+    sqlite3_open("./aventure.db", &db);
+
+    seeDescriLieux(db, "Haunted Mines", 0);
+    seeDescriLieux(db, "Dark Forest", 1);
+    seeDescriLieux(db, "Troll Village", 2);
     sqlite3_close(db);
     return;
 }
